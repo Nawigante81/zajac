@@ -58,51 +58,61 @@ const App: React.FC = () => {
     switch (gameState) {
       case GameState.Start:
         return (
-          <div className="text-center p-8">
-            <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 px-4">
+          <div className="text-center p-8 animate-[fadeIn_1s_ease-out_forwards]">
+            <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 px-4 opacity-0 animate-[slideInLeft_1s_ease-out_0.5s_forwards]">
               Masz na imię Jasiek, ale wszyscy mówią na ciebie Zając. Albo Kurewiusz. Twój los jest spierdolony bardziej niż poranek po libacji. Czas podjąć kilka chujowych decyzji i zobaczyć, jak bardzo można zjebać sobie życie.
             </p>
             <button
               onClick={startGame}
-              className="px-6 sm:px-8 py-3 sm:py-4 bg-red-600 text-white font-bold text-lg sm:text-2xl rounded-lg hover:bg-red-700 transition-transform transform hover:scale-110 shadow-2xl"
+              className="px-6 sm:px-8 py-3 sm:py-4 bg-red-600 text-white font-bold text-lg sm:text-2xl rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-110 active:scale-95 shadow-2xl hover:shadow-red-500/50 opacity-0 animate-[bounce_1s_ease-out_1s_forwards] hover:animate-pulse"
             >
-              Dobra, kurwa, zaczynajmy ten burdel
+              <span className="inline-block transition-transform duration-200 hover:animate-[shake_0.5s_ease-in-out]">
+                Dobra, kurwa, zaczynajmy ten burdel
+              </span>
             </button>
           </div>
         );
       case GameState.Playing:
         return (
-          <>
+          <div className="animate-[fadeIn_0.8s_ease-out_forwards]">
             <StoryWindow log={log} />
             <ChoiceBox choices={choices} onChoice={handleChoice} disabled={false} />
-            <div className="w-full mt-6 text-center">
+            <div className="w-full mt-6 text-center opacity-0 animate-[fadeIn_1s_ease-out_1s_forwards]">
               <button
                 onClick={() => handleChoice("Spierdalaj, gnoju.")}
-                className="px-5 py-2 bg-yellow-800 text-yellow-200 border border-yellow-600 rounded-md font-semibold text-sm hover:bg-yellow-700 transition-all duration-300 disabled:bg-gray-700 disabled:cursor-not-allowed"
+                className="px-5 py-2 bg-yellow-800 text-yellow-200 border border-yellow-600 rounded-md font-semibold text-sm hover:bg-yellow-700 transition-all duration-300 disabled:bg-gray-700 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-yellow-500/30 hover:animate-[shake_0.3s_ease-in-out]"
                 disabled={choices.length === 0}
               >
-                Zbluzgaj Mistrza Gry
+                <span className="inline-block transition-transform duration-200">
+                  Zbluzgaj Mistrza Gry
+                </span>
               </button>
             </div>
-          </>
+          </div>
         );
       case GameState.Loading:
           return (
-            <>
+            <div className="animate-[fadeIn_0.5s_ease-out_forwards]">
               <StoryWindow log={log} />
               <LoadingSpinner />
-            </>
+            </div>
           );
       case GameState.Error:
         return (
-          <div className="text-center p-8 bg-red-900/50 border-2 border-red-500 rounded-lg">
-            <h2 className="text-2xl text-red-400 font-bold mb-4">No i się, kurwa, zesrało!</h2>
-            <p className="text-gray-200 mb-6">{error}</p>
+          <div className="text-center p-8 bg-red-900/50 border-2 border-red-500 rounded-lg animate-[shake_0.5s_ease-in-out] opacity-0 animate-[fadeIn_0.5s_ease-out_0.2s_forwards]">
+            <h2 className="text-2xl text-red-400 font-bold mb-4 animate-[shake_1s_ease-in-out_infinite]">
+              No i się, kurwa, zesrało!
+            </h2>
+            <p className="text-gray-200 mb-6 opacity-0 animate-[slideInLeft_0.8s_ease-out_0.5s_forwards]">
+              {error}
+            </p>
             <button
               onClick={startGame}
-              className="px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all"
+              className="px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all duration-300 transform hover:scale-105 active:scale-95 opacity-0 animate-[bounce_1s_ease-out_1s_forwards] hover:shadow-lg hover:shadow-gray-500/50"
             >
-              Jeszcze raz, do chuja
+              <span className="inline-block transition-transform duration-200 hover:animate-[shake_0.3s_ease-in-out]">
+                Jeszcze raz, do chuja
+              </span>
             </button>
           </div>
         );

@@ -9,9 +9,111 @@
       body {
         background-color: #111827; /* bg-gray-900 */
       }
+      
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
+      }
+      
+      @keyframes typewriter {
+        from { width: 0; }
+        to { width: 100%; }
+      }
+      
+      @keyframes blink {
+        0%, 50% { border-color: transparent; }
+        51%, 100% { border-color: #ef4444; }
+      }
+      
+      @keyframes slideInLeft {
+        from { 
+          opacity: 0; 
+          transform: translateX(-100px); 
+        }
+        to { 
+          opacity: 1; 
+          transform: translateX(0); 
+        }
+      }
+      
+      @keyframes slideInRight {
+        from { 
+          opacity: 0; 
+          transform: translateX(100px); 
+        }
+        to { 
+          opacity: 1; 
+          transform: translateX(0); 
+        }
+      }
+      
+      @keyframes bounce {
+        0%, 20%, 53%, 80%, 100% {
+          transform: translate3d(0,0,0);
+        }
+        40%, 43% {
+          transform: translate3d(0, -8px, 0);
+        }
+        70% {
+          transform: translate3d(0, -4px, 0);
+        }
+        90% {
+          transform: translate3d(0, -2px, 0);
+        }
+      }
+      
+      @keyframes glow {
+        0% { 
+          text-shadow: 0 0 5px #ef4444, 0 0 10px #ef4444, 0 0 15px #ef4444; 
+        }
+        50% { 
+          text-shadow: 0 0 10px #ef4444, 0 0 20px #ef4444, 0 0 30px #ef4444; 
+        }
+        100% { 
+          text-shadow: 0 0 5px #ef4444, 0 0 10px #ef4444, 0 0 15px #ef4444; 
+        }
+      }
+      
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+        20%, 40%, 60%, 80% { transform: translateX(2px); }
+      }
+      
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      
+      .typewriter {
+        overflow: hidden;
+        border-right: 2px solid #ef4444;
+        white-space: nowrap;
+        animation: typewriter 2s steps(50) forwards, blink 1s infinite;
+      }
+      
+      .text-glow {
+        animation: glow 2s ease-in-out infinite;
+      }
+      
+      .choice-appear {
+        animation: slideInLeft 0.5s ease-out forwards;
+      }
+      
+      .choice-appear:nth-child(even) {
+        animation: slideInRight 0.5s ease-out forwards;
+      }
+      
+      .story-text {
+        animation: fadeIn 1s ease-out forwards;
+      }
+      
+      .story-text.typewriter-effect {
+        animation: fadeIn 0.3s ease-out forwards, typewriter 2s steps(100) forwards;
+        border-right: 2px solid #ef4444;
+        overflow: hidden;
+        white-space: pre-wrap;
       }
     </style>
 <script type="importmap">
