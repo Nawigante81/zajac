@@ -9,6 +9,10 @@
       body {
         background-color: #111827; /* bg-gray-900 */
       }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
     </style>
 <script type="importmap">
 {
@@ -20,7 +24,6 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

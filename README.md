@@ -1,20 +1,95 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Jasiek 'Kurewiusz' Zając - Interaktywna Gra Przygodowa
 
-# Run and deploy your AI Studio app
+Cyniczny, wulgarny i sadystyczny mistrz gry prowadzi cię przez mroczne przygody Jaśka Zająca, znanego także jako Kurewiusz. Każda decyzja prowadzi do jeszcze bardziej spierdolonej sytuacji.
 
-This contains everything you need to run your app locally.
+## Funkcje
 
-View your app in AI Studio: https://ai.studio/apps/drive/1PwOlJ3JIdm1f_HD2LBPGcwIVr7c2lQji
+- **Interaktywna narracja**: Dynamicznie generowana historia oparta na twoich wyborach
+- **AI-powered**: Wykorzystuje Google Gemini API do generowania treści
+- **Responsywny design**: Działa na wszystkich urządzeniach
+- **Mroczny humor**: Pełen wulgarnego polskiego humoru
 
-## Run Locally
+## Wymagania
 
-**Prerequisites:**  Node.js
+- Node.js (wersja 18 lub nowsza)
+- Klucz API Google Gemini
 
+## Instalacja i uruchomienie
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1. **Sklonuj repozytorium:**
+   ```bash
+   git clone <repository-url>
+   cd zajac
+   ```
+
+2. **Zainstaluj zależności:**
+   ```bash
+   npm install
+   ```
+
+3. **Skonfiguruj zmienne środowiskowe:**
+   ```bash
+   cp .env.example .env
+   ```
+   Następnie edytuj plik `.env` i wpisz swój klucz API Google Gemini:
+   ```
+   GEMINI_API_KEY=twój_klucz_api_tutaj
+   ```
+   
+   Klucz możesz otrzymać na: https://aistudio.google.com/app/apikey
+
+4. **Uruchom aplikację:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Otwórz w przeglądarce:**
+   ```
+   http://localhost:3000
+   ```
+
+## Budowanie dla produkcji
+
+```bash
+npm run build
+npm run preview
+```
+
+## Struktura projektu
+
+```
+src/
+├── components/          # Komponenty React
+│   ├── Header.tsx      # Nagłówek aplikacji
+│   ├── StoryWindow.tsx # Okno z historią
+│   ├── ChoiceBox.tsx   # Przyciski wyboru
+│   └── LoadingSpinner.tsx # Spinner ładowania
+├── services/           # Usługi
+│   └── geminiService.ts # Komunikacja z API
+├── types.ts           # Definicje typów
+└── App.tsx           # Główny komponent
+```
+
+## Technologie
+
+- **React 19**: Biblioteka UI
+- **TypeScript**: Typowanie
+- **Vite**: Build tool
+- **Tailwind CSS**: Stylowanie
+- **Google Gemini API**: Generowanie treści
+
+## Rozwiązywanie problemów
+
+### Błąd API Key
+Jeśli otrzymujesz błędy związane z kluczem API:
+1. Sprawdź czy plik `.env` istnieje i zawiera prawidłowy klucz
+2. Upewnij się że klucz zaczyna się od odpowiedniego prefiksu
+3. Sprawdź czy masz aktywne API w Google AI Studio
+
+### Problemy z budowaniem
+Jeśli wystąpią problemy z kompilacją:
+```bash
+rm -rf node_modules
+npm install
+npm run build
+```

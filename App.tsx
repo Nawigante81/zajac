@@ -59,12 +59,12 @@ const App: React.FC = () => {
       case GameState.Start:
         return (
           <div className="text-center p-8">
-            <p className="text-xl text-gray-300 mb-8">
+            <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 px-4">
               Masz na imię Jasiek, ale wszyscy mówią na ciebie Zając. Albo Kurewiusz. Twój los jest spierdolony bardziej niż poranek po libacji. Czas podjąć kilka chujowych decyzji i zobaczyć, jak bardzo można zjebać sobie życie.
             </p>
             <button
               onClick={startGame}
-              className="px-8 py-4 bg-red-600 text-white font-bold text-2xl rounded-lg hover:bg-red-700 transition-transform transform hover:scale-110 shadow-2xl"
+              className="px-6 sm:px-8 py-3 sm:py-4 bg-red-600 text-white font-bold text-lg sm:text-2xl rounded-lg hover:bg-red-700 transition-transform transform hover:scale-110 shadow-2xl"
             >
               Dobra, kurwa, zaczynajmy ten burdel
             </button>

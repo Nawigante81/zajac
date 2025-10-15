@@ -16,7 +16,7 @@ export const StoryWindow: React.FC<StoryWindowProps> = ({ log }) => {
   return (
     <div className="w-full h-96 bg-gray-900/50 border-2 border-gray-700 rounded-lg p-4 overflow-y-auto font-mono text-lg leading-relaxed shadow-inner">
       {log.map((entry) => (
-        <div key={entry.id} className="mb-4 animate-fadeIn">
+        <div key={entry.id} className="mb-4 opacity-0 animate-[fadeIn_0.5s_ease-in_forwards]">
           {entry.type === 'story' ? (
             <p className="text-gray-200">
               <span className="text-red-500 font-bold mr-2">&gt;</span>

@@ -1,10 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StorySegment, LogEntry } from '../types';
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = process.env.API_KEY || process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
+  throw new Error("GEMINI_API_KEY environment variable not set. Please add your API key to .env file.");
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
@@ -63,12 +63,29 @@ export const generateStorySegment = async (log: LogEntry[]): Promise<StorySegmen
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    if (error instanceof Error && error.message.includes('JSON')) {
+    
+    // Handle specific error types
+    if (error instanceof Error) {
+      if (error.message.includes('JSON')) {
         return {
-            story: "Cholera, zaciąłem się. Coś poszło nie tak z moją parszywą narracją. Spróbujmy jeszcze raz, kurwa.",
-            choices: ["Od nowa"],
+          story: "Cholera, zaciąłem się. Coś poszło nie tak z moją parszywą narracją. Spróbujmy jeszcze raz, kurwa.",
+          choices: ["Od nowa"],
         };
+      }
+      
+      if (error.message.includes('API key') || error.message.includes('401')) {
+        throw new Error("Nieprawidłowy klucz API. Sprawdź swój GEMINI_API_KEY w pliku .env");
+      }
+      
+      if (error.message.includes('quota') || error.message.includes('429')) {
+        throw new Error("Przekroczono limit zapytań do API. Spróbuj ponownie za chwilę.");
+      }
+      
+      if (error.message.includes('network') || error.message.includes('ENOTFOUND')) {
+        throw new Error("Brak połączenia z internetem lub API jest niedostępne.");
+      }
     }
-    throw new Error("Failed to generate story segment. The API might be down or your key is invalid.");
+    
+    throw new Error("Nie udało się wygenerować fragmentu historii. API może być niedostępne lub klucz jest nieprawidłowy.");
   }
 };
