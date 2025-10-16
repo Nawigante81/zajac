@@ -87,10 +87,11 @@
       }
       
       .typewriter {
-        overflow: hidden;
+        display: inline-block;
         border-right: 2px solid #ef4444;
-        white-space: nowrap;
-        animation: typewriter 2s steps(50) forwards, blink 1s infinite;
+        animation: blink 1s step-end infinite;
+        white-space: inherit;   /* nie wymuszaj nowrap na kontenerze */
+        overflow: visible;      /* nie obcinaj zawartości (np. przycisku) */
       }
       
       .text-glow {
