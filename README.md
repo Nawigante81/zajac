@@ -8,6 +8,7 @@ Cyniczny, wulgarny i sadystyczny mistrz gry prowadzi cię przez mroczne przygody
 - **AI-powered**: Wykorzystuje Google Gemini API do generowania treści
 - **Responsywny design**: Działa na wszystkich urządzeniach
 - **Mroczny humor**: Pełen wulgarnego polskiego humoru
+- **Autosejw i eksport**: Gra zapamiętuje ostatnią sesję i pozwala kopiować lub pobrać log z przygodą
 
 ## Wymagania
 
