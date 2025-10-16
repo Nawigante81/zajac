@@ -26,6 +26,7 @@ const resolveApiKey = (): string | null => {
 };
 
 let cachedClient: GoogleGenAI | null = null;
+let missingKeyWarned = false;
 
 const getClient = () => {
   if (cachedClient) {
@@ -35,9 +36,13 @@ const getClient = () => {
   const apiKey = resolveApiKey();
 
   if (!apiKey) {
-    throw new Error(
-      "Brak klucza API. Ustaw VITE_GEMINI_API_KEY lub GEMINI_API_KEY i zrestartuj aplikację."
-    );
+    if (!missingKeyWarned && typeof console !== "undefined") {
+      console.warn(
+        "Nie ustawiono klucza GEMINI_API_KEY. Aplikacja przechodzi w tryb offline."
+      );
+      missingKeyWarned = true;
+    }
+    return null;
   }
 
   cachedClient = new GoogleGenAI({ apiKey });
@@ -66,10 +71,78 @@ const responseSchema = {
   required: ["story", "choices"],
 } as const;
 
+const fallbackIntros = [
+  "Tryb awaryjny bez AI: Jasiek budzi się z kacem większym niż ego lokalnego wójta.",
+  "Brak dostępu do cholernego Gemini, więc Mistrz Gry improwizuje na żywo.",
+  "Offline mode ON. Jasiek patrzy w pustkę, a pustka patrzy w niego jak na ćwoka.",
+];
+
+const fallbackComplications = [
+  "W kieszeni znajduje rozjebaną zapalniczkę i wezwanie na komisariat.",
+  "Z klatki schodowej dobiega krzyk sąsiadki, że ktoś mu zabrał ostatnią flaszkę.",
+  "Telefon pika jak szalony, bo diler domaga się zaległych monet i grozi kiblowaniem.",
+  "Na stole leży tajemniczy bilet na pociąg do Pcimia Dolnego z dopiskiem 'nie spierdol tego'.",
+];
+
+const fallbackTwists = [
+  "Na dodatek na jego plecach siedzi kot sąsiada i żąda haraczu w whiskasie.",
+  "Okazuje się, że cała melina jest nagle pełna kamer z programu interwencyjnego.",
+  "Ktoś wypisał na drzwiach 'Kurewiusz ma oddać sprzęt do końca dnia' czerwonym sprayem.",
+  "W lodówce zamiast jedzenia znajduje bilecik z rymowanką o morderczym klownie.",
+];
+
+const fallbackChoicePool = [
+  "Zwinąć zapalniczkę", "Udawać trupa", "Zadzwonić po matkę", "Spierdolić przez okno",
+  "Napisać do dilera", "Schować się w łazience", "Rozpętać burdę", "Otworzyć bilet", "Wyć do księżyca",
+  "Złapać kota", "Pójść na komisariat", "Zrobić scenę sąsiadce",
+];
+
+const pickRandom = <T,>(items: readonly T[]): T => {
+  const index = Math.floor(Math.random() * items.length);
+  return items[index];
+};
+
+const generateFallbackSegment = (log: LogEntry[]): StorySegment => {
+  const lastChoice = [...log].reverse().find((entry) => entry.type === "choice");
+  const intro = pickRandom(fallbackIntros);
+  const complication = pickRandom(fallbackComplications);
+  const twist = pickRandom(fallbackTwists);
+
+  const storyBase = `${intro} ${complication} ${twist}`;
+  const story = lastChoice
+    ? `${storyBase} A wszystko to dlatego, że wcześniej wybrałeś '${lastChoice.text}', brawo geniuszu.`
+    : `${storyBase} To dopiero początek kłopotów, a nawet jeszcze nic nie kliknąłeś.`;
+
+  const availableChoices = [...fallbackChoicePool];
+  const choices: string[] = [];
+
+  while (choices.length < 3 && availableChoices.length > 0) {
+    const choice = pickRandom(availableChoices);
+    choices.push(choice);
+    const choiceIndex = availableChoices.indexOf(choice);
+    availableChoices.splice(choiceIndex, 1);
+  }
+
+  if (choices.length === 0) {
+    choices.push("Od nowa");
+  }
+
+  return {
+    story,
+    choices,
+  };
+};
+
 export const generateStorySegment = async (
   log: LogEntry[]
 ): Promise<StorySegment> => {
   try {
+    const client = getClient();
+
+    if (!client) {
+      return generateFallbackSegment(log);
+    }
+
     // Zamiana historii na listę "contents" zgodną z SDK
     const prompt =
       log
@@ -78,7 +151,6 @@ export const generateStorySegment = async (
         )
         .join("\n") + "\n\nWygeneruj następny fragment.";
 
-    const client = getClient();
     const response = await client.models.generateContent({
       model: modelName,
       contents: prompt,
@@ -119,27 +191,27 @@ export const generateStorySegment = async (
         };
       }
 
-      if (error.message.includes("API key") || error.message.includes("401")) {
-        throw new Error(
-          "Nieprawidłowy klucz API. Sprawdź swój GEMINI_API_KEY w pliku .env"
-        );
-      }
-
       if (error.message.includes("quota") || error.message.includes("429")) {
-        throw new Error(
-          "Przekroczono limit zapytań do API. Spróbuj ponownie za chwilę."
-        );
+        return {
+          story:
+            "Gemini ma dziś dosyć twoich wybryków. Limit zapytań wyczerpany, więc Mistrz Gry jedzie improwizacją.",
+          choices: ["Poczekaj chwilę", "Spróbuj mimo wszystko", "Od nowa"],
+        };
       }
 
-      if (error.message.includes("network") || error.message.includes("ENOTFOUND")) {
-        throw new Error(
-          "Brak połączenia z internetem lub API jest niedostępne."
-        );
+      if (
+        error.message.includes("network") ||
+        error.message.includes("ENOTFOUND") ||
+        error.message.includes("fetch failed")
+      ) {
+        return {
+          story:
+            "Nie ma internetu, nie ma AI. Jasiek siedzi w offline'owej melinie i liczy, że ktoś mu rzuci kabel.",
+          choices: ["Odśwież stronę", "Pobierz zapis", "Od nowa"],
+        };
       }
     }
 
-    throw new Error(
-      "Nie udało się wygenerować fragmentu historii. API może być niedostępne lub klucz jest nieprawidłowy."
-    );
+    return generateFallbackSegment(log);
   }
 };
