@@ -16,3 +16,9 @@ export enum GameState {
   Error,
   Loading,
 }
+
+export interface SavedSession {
+  log: LogEntry[];
+  choices: string[];
+  savedAt: number;
+}

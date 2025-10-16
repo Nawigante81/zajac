@@ -1,15 +1,48 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StorySegment, LogEntry } from "../types";
 
-const API_KEY = process.env.API_KEY || process.env.GEMINI_API_KEY;
+const resolveApiKey = (): string | null => {
+  const processKey =
+    typeof process !== "undefined"
+      ? process.env?.GEMINI_API_KEY ?? process.env?.API_KEY ?? null
+      : null;
 
-if (!API_KEY) {
-  throw new Error(
-    "GEMINI_API_KEY environment variable not set. Please add your API key to .env file."
-  );
-}
+  if (processKey) {
+    return processKey;
+  }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+  const metaEnv =
+    typeof import.meta !== "undefined"
+      ? (import.meta as ImportMeta & {
+          env?: Record<string, string | undefined>;
+        }).env
+      : undefined;
+
+  if (!metaEnv) {
+    return null;
+  }
+
+  return metaEnv.VITE_GEMINI_API_KEY ?? metaEnv.VITE_API_KEY ?? null;
+};
+
+let cachedClient: GoogleGenAI | null = null;
+
+const getClient = () => {
+  if (cachedClient) {
+    return cachedClient;
+  }
+
+  const apiKey = resolveApiKey();
+
+  if (!apiKey) {
+    throw new Error(
+      "Brak klucza API. Ustaw VITE_GEMINI_API_KEY lub GEMINI_API_KEY i zrestartuj aplikację."
+    );
+  }
+
+  cachedClient = new GoogleGenAI({ apiKey });
+  return cachedClient;
+};
 const modelName = "gemini-2.5-flash";
 
 // Uwaga: Treść systemowa zawiera wulgarne frazy z istniejącego projektu — pozostawiamy bez zmian funkcjonalnych.
@@ -45,7 +78,8 @@ export const generateStorySegment = async (
         )
         .join("\n") + "\n\nWygeneruj następny fragment.";
 
-    const response = await ai.models.generateContent({
+    const client = getClient();
+    const response = await client.models.generateContent({
       model: modelName,
       contents: prompt,
       config: {

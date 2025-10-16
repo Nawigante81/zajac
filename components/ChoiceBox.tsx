@@ -28,7 +28,7 @@ export const ChoiceBox: React.FC<ChoiceBoxProps> = ({ choices, onChoice, disable
 
       return () => clearInterval(timer);
     }
-  }, [choices.length]);
+  }, [choices]);
 
   if (choices.length === 0) {
     return null;
