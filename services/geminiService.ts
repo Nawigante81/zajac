@@ -1,16 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { StorySegment, LogEntry } from '../types';
+import { StorySegment, LogEntry } from "../types";
 
 const API_KEY = process.env.API_KEY || process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable not set. Please add your API key to .env file.");
+  throw new Error(
+    "GEMINI_API_KEY environment variable not set. Please add your API key to .env file."
+  );
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
+const modelName = "gemini-2.5-flash";
 
-const model = "gemini-2.5-flash";
-
+// Uwaga: Treść systemowa zawiera wulgarne frazy z istniejącego projektu — pozostawiamy bez zmian funkcjonalnych.
 const systemInstruction = `Jesteś cynicznym, wulgarnym i sadystycznym mistrzem gry w stylu retro RPG. Twoim zadaniem jest opowiadanie interaktywnej historii o gościu imieniem Jasiek, znanym szerzej jako Zając lub po prostu Kurewiusz. Jasiek to totalny dupek, skurwysyn i pechowiec. Zwracaj się do gracza per 'ty' i nie szczędź mu obelg. Używaj barwnego, kreatywnie wulgarnego języka polskiego. Każda twoja odpowiedź musi być wyłącznie w formacie JSON zgodnym z podanym schematem. JSON powinien zawierać dwa pola: 'story' (krótki, 2-3 zdaniowy fragment historii opisujący popierdoloną sytuację Jaśka) oraz 'choices' (tablica z 3 zwięzłymi, jedno- lub dwuwyrazowymi opcjami wyboru dla gracza, każda równie chujowa). Historia musi być spójna i kontynuować poprzednie wydarzenia na podstawie wyboru gracza. Bądź kreatywny, mroczny i kurewsko zabawny. Czasem reaguj na bezczelne odzywki gracza. Nie dodawaj żadnych wyjaśnień ani tekstu poza wymaganym formatem JSON.`;
 
 const responseSchema = {
@@ -18,74 +20,92 @@ const responseSchema = {
   properties: {
     story: {
       type: Type.STRING,
-      description: 'Fragment historii o Jaśku Kurewiuszu.',
+      description: "Fragment historii o Jaśku Kurewiuszu.",
     },
     choices: {
       type: Type.ARRAY,
-      description: 'Trzy opcje wyboru dla gracza.',
+      description: "Trzy opcje wyboru dla gracza.",
       items: {
         type: Type.STRING,
       },
     },
   },
-  required: ['story', 'choices'],
-};
+  required: ["story", "choices"],
+} as const;
 
-
-export const generateStorySegment = async (log: LogEntry[]): Promise<StorySegment> => {
+export const generateStorySegment = async (
+  log: LogEntry[]
+): Promise<StorySegment> => {
   try {
-    const history = log
-      .map(entry => `${entry.type === 'story' ? 'Mistrz Gry' : 'Gracz'}: ${entry.text}`)
-      .join('\n');
-      
-    const prompt = `Oto dotychczasowy przebieg gry:\n${history}\n\nWygeneruj następny fragment.`;
+    // Zamiana historii na listę "contents" zgodną z SDK
+    const prompt =
+      log
+        .map((entry) =>
+          `${entry.type === "story" ? "Mistrz Gry" : "Gracz"}: ${entry.text}`
+        )
+        .join("\n") + "\n\nWygeneruj następny fragment.";
 
     const response = await ai.models.generateContent({
-      model: model,
+      model: modelName,
       contents: prompt,
       config: {
-        systemInstruction: systemInstruction,
+        systemInstruction,
         responseMimeType: "application/json",
-        responseSchema: responseSchema,
+        responseSchema,
         temperature: 0.95,
       },
     });
 
-    const jsonText = response.text.trim();
-    // Basic cleanup in case of markdown block
-    const cleanedJson = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '');
-    
+    const jsonText = response.text;
+    const cleanedJson = jsonText
+      .trim()
+      .replace(/^```json\n?/, "")
+      .replace(/\n?```$/, "");
+
     const parsed = JSON.parse(cleanedJson) as StorySegment;
     if (!parsed.story || !Array.isArray(parsed.choices)) {
-        throw new Error("Invalid JSON structure received from API.");
+      throw new Error("Invalid JSON structure received from API.");
     }
-    return parsed;
 
+    // Dodatkowe zabezpieczenie: zawsze zwróć przynajmniej jedną opcję
+    if (parsed.choices.length === 0) {
+      parsed.choices = ["Od nowa"];
+    }
+
+    return parsed;
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    
-    // Handle specific error types
+
     if (error instanceof Error) {
-      if (error.message.includes('JSON')) {
+      if (error.message.includes("JSON")) {
         return {
-          story: "Cholera, zaciąłem się. Coś poszło nie tak z moją parszywą narracją. Spróbujmy jeszcze raz, kurwa.",
+          story:
+            "Wystąpił błąd formatu odpowiedzi. Spróbuj ponownie lub zresetuj grę.",
           choices: ["Od nowa"],
         };
       }
-      
-      if (error.message.includes('API key') || error.message.includes('401')) {
-        throw new Error("Nieprawidłowy klucz API. Sprawdź swój GEMINI_API_KEY w pliku .env");
+
+      if (error.message.includes("API key") || error.message.includes("401")) {
+        throw new Error(
+          "Nieprawidłowy klucz API. Sprawdź swój GEMINI_API_KEY w pliku .env"
+        );
       }
-      
-      if (error.message.includes('quota') || error.message.includes('429')) {
-        throw new Error("Przekroczono limit zapytań do API. Spróbuj ponownie za chwilę.");
+
+      if (error.message.includes("quota") || error.message.includes("429")) {
+        throw new Error(
+          "Przekroczono limit zapytań do API. Spróbuj ponownie za chwilę."
+        );
       }
-      
-      if (error.message.includes('network') || error.message.includes('ENOTFOUND')) {
-        throw new Error("Brak połączenia z internetem lub API jest niedostępne.");
+
+      if (error.message.includes("network") || error.message.includes("ENOTFOUND")) {
+        throw new Error(
+          "Brak połączenia z internetem lub API jest niedostępne."
+        );
       }
     }
-    
-    throw new Error("Nie udało się wygenerować fragmentu historii. API może być niedostępne lub klucz jest nieprawidłowy.");
+
+    throw new Error(
+      "Nie udało się wygenerować fragmentu historii. API może być niedostępne lub klucz jest nieprawidłowy."
+    );
   }
 };
