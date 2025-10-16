@@ -1,15 +1,12 @@
+// Używamy nowego SDK Google GenAI; klient tworzymy późno (lazy), aby uniknąć problemów runtime.
 import { GoogleGenAI, Type } from "@google/genai";
 import { StorySegment, LogEntry } from "../types";
 
-const API_KEY = process.env.API_KEY || process.env.GEMINI_API_KEY;
+// Vite podczas bundlingu podmienia te wartości na literaly; brak klucza nie powinien psuć importu modułu
+const API_KEY: string | undefined =
+  (process.env.API_KEY as string | undefined) ||
+  (process.env.GEMINI_API_KEY as string | undefined);
 
-if (!API_KEY) {
-  throw new Error(
-    "GEMINI_API_KEY environment variable not set. Please add your API key to .env file."
-  );
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 const modelName = "gemini-2.5-flash";
 
 // Uwaga: Treść systemowa zawiera wulgarne frazy z istniejącego projektu — pozostawiamy bez zmian funkcjonalnych.
@@ -36,8 +33,27 @@ const responseSchema = {
 export const generateStorySegment = async (
   log: LogEntry[]
 ): Promise<StorySegment> => {
+  // Fallback offline jeśli nie ma klucza API: generujemy pseudo-losowy fragment
+  if (!API_KEY) {
+    const insults = [
+      "Świat patrzy na ciebie z niesmakiem.",
+      "Wdepnąłeś w to po kostki i dalej brniesz.",
+      "Los znowu cię kopnął, ale udajesz, że to masaż."
+    ];
+    const lastChoice = [...log].reverse().find(e => e.type === 'choice')?.text;
+    const prefix = lastChoice ? `Po wyborze: "${lastChoice}" — ` : "";
+    return {
+      story: `${prefix}${insults[Math.floor(Math.random() * insults.length)]}`,
+      choices: ["W lewo", "W prawo", "Od nowa"],
+    };
+  }
+
   try {
-    // Zamiana historii na listę "contents" zgodną z SDK
+    // Tworzymy klienta dopiero przy użyciu, aby uniknąć błędów przy imporcie
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ai: any = new GoogleGenAI({ apiKey: API_KEY });
+
+    // Kontekst rozmowy w czytelnej formie promptu
     const prompt =
       log
         .map((entry) =>
@@ -45,9 +61,18 @@ export const generateStorySegment = async (
         )
         .join("\n") + "\n\nWygeneruj następny fragment.";
 
-    const response = await ai.models.generateContent({
+    // Większość wersji SDK akceptuje contents jako strukturę ról i parts
+    const contents = [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ];
+
+    // Próba wywołania nowego endpointu SDK; parametry w config/systemInstruction
+    const response: any = await ai.models.generateContent({
       model: modelName,
-      contents: prompt,
+      contents,
       config: {
         systemInstruction,
         responseMimeType: "application/json",
@@ -56,7 +81,10 @@ export const generateStorySegment = async (
       },
     });
 
-    const jsonText = response.text;
+    // Różne wersje SDK zwracają tekst jako właściwość lub metodę
+    const rawText = typeof response?.text === "function" ? response.text() : response?.text;
+    const jsonText = (await Promise.resolve(rawText)) as string;
+
     const cleanedJson = jsonText
       .trim()
       .replace(/^```json\n?/, "")
@@ -67,7 +95,6 @@ export const generateStorySegment = async (
       throw new Error("Invalid JSON structure received from API.");
     }
 
-    // Dodatkowe zabezpieczenie: zawsze zwróć przynajmniej jedną opcję
     if (parsed.choices.length === 0) {
       parsed.choices = ["Od nowa"];
     }
@@ -77,27 +104,25 @@ export const generateStorySegment = async (
     console.error("Error calling Gemini API:", error);
 
     if (error instanceof Error) {
-      if (error.message.includes("JSON")) {
+      const msg = error.message || "";
+      if (msg.toLowerCase().includes("json")) {
         return {
           story:
             "Wystąpił błąd formatu odpowiedzi. Spróbuj ponownie lub zresetuj grę.",
           choices: ["Od nowa"],
         };
       }
-
-      if (error.message.includes("API key") || error.message.includes("401")) {
+      if (msg.includes("API key") || msg.includes("401")) {
         throw new Error(
           "Nieprawidłowy klucz API. Sprawdź swój GEMINI_API_KEY w pliku .env"
         );
       }
-
-      if (error.message.includes("quota") || error.message.includes("429")) {
+      if (msg.toLowerCase().includes("quota") || msg.includes("429")) {
         throw new Error(
           "Przekroczono limit zapytań do API. Spróbuj ponownie za chwilę."
         );
       }
-
-      if (error.message.includes("network") || error.message.includes("ENOTFOUND")) {
+      if (msg.toLowerCase().includes("network") || msg.includes("ENOTFOUND")) {
         throw new Error(
           "Brak połączenia z internetem lub API jest niedostępne."
         );
