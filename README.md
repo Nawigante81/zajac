@@ -34,7 +34,7 @@ Cyniczny, wulgarny i sadystyczny mistrz gry prowadzi cię przez mroczne przygody
    ```
    Następnie edytuj plik `.env` i wpisz swój klucz API Google Gemini:
    ```
-   GEMINI_API_KEY=twój_klucz_api_tutaj
+   GEMINI_API_KEY=<tu_wstaw_klucz>
    ```
    
    Klucz możesz otrzymać na: https://aistudio.google.com/app/apikey
